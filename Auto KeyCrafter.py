@@ -172,7 +172,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Auto KeyCraft")
 
-        self.message_box_open = False
         self.hotkeys_enabled = False
         self.castkeys_enabled = False
         self.cast_hotkey_enabled = False
@@ -484,18 +483,12 @@ class MainWindow(QMainWindow):
             except:
                 pass
 
-        if not self.message_box_open:
-            self.message_box_open = True
-            msgBox = QMessageBox(self)
-            msgBox.setIcon(QMessageBox.Warning)
-            msgBox.setText(msg)
-            msgBox.setWindowTitle(title)
-            msgBox.setStandardButtons(QMessageBox.Ok)
-            msgBox.exec_()
-
-            # below code for making sure i don't have more than 1 of the same type of messagebox open
-            # this can happen because im using multiple qthreads for the cast keys QThreads
-            msgBox.finished.connect(self.message_box_closed)
+        msgBox = QMessageBox(self)
+        msgBox.setIcon(QMessageBox.Warning)
+        msgBox.setText(msg)
+        msgBox.setWindowTitle(title)
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.exec_()
 
     def message_box_closed(self):
         self.message_box_open = False
