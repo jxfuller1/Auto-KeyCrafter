@@ -16,3 +16,6 @@ Select which key(s) you want, select interval between key presses, enter start/s
 
 Feel free to hit me up for any questions or any features you would like this to have.
 
+Sidenote:  Right now I have it hardcoded for only 5 possible selections for autocast or autohit keys, however, with the way i have this coded
+I can easily add more by changing a single integer value or decide to make it completely user controlled to add or substract how many they want.
+
