@@ -1,6 +1,6 @@
 Originally made this program to auto hit key combinations or auto cast keys when playing Last Epoch.  However, it could be used for any game.
-
 Bonus is that some anti-cheats that pick up on Autohotkey, won't pick this up.
+
 
 <b>How to use:</b>
 
