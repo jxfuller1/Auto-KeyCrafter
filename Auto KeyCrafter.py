@@ -573,10 +573,6 @@ class HotkeyListener(QThread):
             keyboard.press_and_release(button)
             time.sleep(interval)
 
-        # example of hitting a keyboard combination, not using this, but keeping code here
-        # in case i add this functionality
-        # key_controller.tap(keyboard.Key.ctrl, [keyboard.Key.alt, 'h'])
-
     def stop_listener(self):
         for key, value in self.hotkeys.items():
             keyboard.remove_hotkey(key)
