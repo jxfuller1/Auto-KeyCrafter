@@ -5,7 +5,7 @@ import keyboard
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer, QObject
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QComboBox, QHBoxLayout, QApplication, QMainWindow, QDoubleSpinBox, \
-    QLabel, QLineEdit, QPushButton, QLayout, QMessageBox, QAction, QDialog, QTabWidget, QCheckBox
+    QLabel, QLineEdit, QPushButton, QLayout, QMessageBox, QAction, QDialog, QTabWidget, QCheckBox, QSpinBox
 
 
 class Howtohotkey(QDialog):
@@ -291,9 +291,26 @@ class MainWindow(QMainWindow):
 
         self.cast_hold_button_layout = QVBoxLayout()
         self.cast_hold_button_label = QLabel("Hold -> Release")
-        self.cast_hold_button_label.setToolTip("Holds Key for the Interval \nThen releases \n Instead of just hitting key at interval")
+        self.cast_hold_button_label.setToolTip("Holds Key for the Interval \nThen releases \nInstead of just hitting key at interval")
         self.cast_hold_button_label.setFont(myfont)
         self.cast_hold_button_layout.addWidget(self.cast_hold_button_label, alignment=Qt.AlignHCenter)
+
+        self.universal_layout = QVBoxLayout()
+        self.universal_label = QLabel("Universal Key\nPress time")
+        self.universal_label.setToolTip("When Autocasting, if not using hold/release feature,\n"
+                                        "this is the amount of time to press/hold key before releasing.\n"
+                                        "This is needed because games like Last Epoch don't always register\n"
+                                        "hitting a key while casting something else at the same time,\n"
+                                        "unless key is held down for X amount of time. This is in Milliseconds\n"
+                                        "1000 milliseconds = 1 second")
+        self.universal_label.setFont(myfont)
+        self.universal_time = QSpinBox()
+        self.universal_time.setRange(10, 10000)
+        self.universal_time.setValue(10)
+
+        self.universal_layout.addWidget(self.universal_label, alignment=Qt.AlignHCenter)
+        self.universal_layout.addWidget(self.universal_time)
+        self.universal_layout.addStretch()
 
         number_of_base_castkeys = 5
         for i in range(number_of_base_castkeys):
@@ -304,6 +321,7 @@ class MainWindow(QMainWindow):
         self.midtab2_horizontal_layout.addLayout(self.castkey_layout)
         self.midtab2_horizontal_layout.addLayout(self.cast_interval_layout)
         self.midtab2_horizontal_layout.addLayout(self.cast_hold_button_layout)
+        self.midtab2_horizontal_layout.addLayout(self.universal_layout)
 
         self.horizontal_tab2_hotkey_layout = QHBoxLayout()
         self.tab2_hotkey = QLabel("Start/Stop Hotkey")
@@ -399,9 +417,10 @@ class MainWindow(QMainWindow):
     def stop_start_autocasting(self):
         if self.cast_hotkey_enabled:
             self.cast_hotkey_enabled = False
+            universal_time = self.universal_time.value()
 
             keys = self.gather_keys_and_values(self.all_castkey_interval_layouts)
-            self.castkey_listener = CastkeyListener(keys)
+            self.castkey_listener = CastkeyListener(keys, universal_time)
             self.castkey_listener.start()
         else:
             self.cast_hotkey_enabled = True
@@ -508,13 +527,19 @@ class MainWindow(QMainWindow):
 
 
 class Worker(QObject):
-    def __init__(self, keys):
+    def __init__(self, keys, universal_time):
         super().__init__()
         self.keys = keys
+        self.universal_time = universal_time
+
+        # this is if not using the press/hold option and is designed so that the key holds down for 1 10millisecond cycle
+        # this is because on some games like last Epoch just using the keyboard.press_and_release function is too fast
+        # and doens't activate the key in game, especially when another ability is being using at the same time
+        self.cast_key_pressed = False
 
         # append a start time to the key values
         for key, value in self.keys.items():
-            # append current state of key press as being false
+            # append current state of key press as being false, this is if using the hold key then release option only
             value.append(False)
 
             # append start time
@@ -525,7 +550,7 @@ class Worker(QObject):
         self.timer.timeout.connect(self.timer_timeout)
 
     def start_timer(self):
-        self.timer.start(10)  # 10 milliseconds
+        self.timer.start(self.universal_time)  # delay between each function activation
 
     def stop_timer(self):
         self.timer.stop()
@@ -537,12 +562,16 @@ class Worker(QObject):
             # if hold/release option not checked in UI
             if int(value[1]) != 2:
                 if end - value[-1] > value[0]:
-                    keyboard.press_and_release(key)
-                    value[-1] = time.time()
-            else:
-                if value[2] == False:
                     keyboard.press(key)
-                    value[2] = True
+                    self.cast_key_pressed = True
+
+                   # keyboard.press_and_release(key)
+
+                    value[-1] = time.time()
+                else:
+                    if self.cast_key_pressed:
+                        keyboard.release(key)
+                        self.cast_key_pressed = False
 
             # if hold/release and past time of interval release key
             if int(value[1]) == 2:
@@ -553,15 +582,22 @@ class Worker(QObject):
                     # put value in dictionary that key is now released
                     value[2] = False
 
+                else:
+                    if value[2] == False:
+                        keyboard.press(key)
+                        value[2] = True
+
+
 class CastkeyListener(QThread):
     timeout_signal = pyqtSignal()
 
-    def __init__(self, keys):
+    def __init__(self, keys, universal_time):
         super().__init__()
         self.keys = keys
+        self.universal_time = universal_time
 
     def run(self):
-        self.worker = Worker(self.keys)
+        self.worker = Worker(self.keys, self.universal_time)
         self.worker.moveToThread(self)
         self.worker.start_timer()
         self.exec_()
