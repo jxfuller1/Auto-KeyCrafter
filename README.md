@@ -10,9 +10,9 @@ Enter Hotkey, keys you would like it to hit and interval between key presses:
 ![image](https://github.com/jxfuller1/Auto-KeyCrafter/assets/123666150/a88e4b33-facf-471c-9abf-43b6a4421bee)
 
 For auto-casting keys:
-Select which key(s) you want, select interval between key presses, enter start/stop hotkey:
+Select which key(s) you want, select interval between key presses, enter start/stop hotkey.  With optional choice to hold key and release at given interval instead of just pressing the key at the interval:
 
-![image](https://github.com/jxfuller1/Auto-KeyCrafter/assets/123666150/54850088-cd00-4fc5-8c12-e5b748971473)
+![Capture](https://github.com/jxfuller1/Auto-KeyCrafter/assets/123666150/6c97cf3c-73d4-4903-8573-2b56e5a74c83)
 
 Feel free to hit me up for any questions or any features you would like this to have.
 
