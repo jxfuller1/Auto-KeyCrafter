@@ -5,7 +5,7 @@ import keyboard
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer, QObject
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QComboBox, QHBoxLayout, QApplication, QMainWindow, QDoubleSpinBox, \
-    QLabel, QLineEdit, QPushButton, QLayout, QMessageBox, QAction, QDialog, QTabWidget
+    QLabel, QLineEdit, QPushButton, QLayout, QMessageBox, QAction, QDialog, QTabWidget, QCheckBox
 
 
 class Howtohotkey(QDialog):
@@ -289,14 +289,21 @@ class MainWindow(QMainWindow):
         self.cast_interval_label.setFont(myfont)
         self.cast_interval_layout.addWidget(self.cast_interval_label, alignment=Qt.AlignHCenter)
 
+        self.cast_hold_button_layout = QVBoxLayout()
+        self.cast_hold_button_label = QLabel("Hold -> Release")
+        self.cast_hold_button_label.setToolTip("Holds Key for the Interval \nThen releases \n Instead of just hitting key at interval")
+        self.cast_hold_button_label.setFont(myfont)
+        self.cast_hold_button_layout.addWidget(self.cast_hold_button_label, alignment=Qt.AlignHCenter)
+
         number_of_base_castkeys = 5
         for i in range(number_of_base_castkeys):
             self.create_tab2_widgets()
 
-        self.all_castkey_interval_layouts = [self.castkey_layout, self.cast_interval_layout]
+        self.all_castkey_interval_layouts = [self.castkey_layout, self.cast_interval_layout, self.cast_hold_button_layout]
 
         self.midtab2_horizontal_layout.addLayout(self.castkey_layout)
         self.midtab2_horizontal_layout.addLayout(self.cast_interval_layout)
+        self.midtab2_horizontal_layout.addLayout(self.cast_hold_button_layout)
 
         self.horizontal_tab2_hotkey_layout = QHBoxLayout()
         self.tab2_hotkey = QLabel("Start/Stop Hotkey")
@@ -347,8 +354,12 @@ class MainWindow(QMainWindow):
         time_spinbox = QDoubleSpinBox()
         time_spinbox.setDecimals(2)
 
+        hold_cast = QCheckBox()
+        hold_cast.setMinimumHeight(20)
+
         self.castkey_layout.addWidget(combo_box)
         self.cast_interval_layout.addWidget(time_spinbox)
+        self.cast_hold_button_layout.addWidget(hold_cast, alignment=Qt.AlignHCenter)
 
     def create_tab1_widgets(self):
         hotkey_edit = QLineEdit()
@@ -414,7 +425,6 @@ class MainWindow(QMainWindow):
     def gather_keys_and_values(self, layouts: List[QLayout]) -> dict:
         """
         layouts: list of layouts that you want to collect values from the widgets
-        must_have_values:  which layouts from the layouts list must have values in their corresponding widgets
         return: Dictionary.  The widgets for the first layout provided will be the key for the dict, with the rest
         of the widget values in the other layouts being the value as a list for the dictionary
         """
@@ -442,6 +452,9 @@ class MainWindow(QMainWindow):
 
                     if isinstance(widget, QDoubleSpinBox):
                         value = str(widget.value())
+
+                    if isinstance(widget, QCheckBox):
+                        value = str(widget.checkState())
 
                     if index == 0:
                         key = value
@@ -501,6 +514,10 @@ class Worker(QObject):
 
         # append a start time to the key values
         for key, value in self.keys.items():
+            # append current state of key press as being false
+            value.append(False)
+
+            # append start time
             value[0] = float(value[0])
             value.append(time.time())
 
@@ -515,11 +532,26 @@ class Worker(QObject):
 
     def timer_timeout(self):
         for key, value in self.keys.items():
-            end = time.time()   
-            if end - value[1] > value[0]:
-                keyboard.press_and_release(key)
-                value[1] = time.time()
+            end = time.time()
 
+            # if hold/release option not checked in UI
+            if int(value[1]) != 2:
+                if end - value[-1] > value[0]:
+                    keyboard.press_and_release(key)
+                    value[-1] = time.time()
+            else:
+                if value[2] == False:
+                    keyboard.press(key)
+                    value[2] = True
+
+            # if hold/release and past time of interval release key
+            if int(value[1]) == 2:
+                if end - value[-1] > value[0]:
+                    keyboard.release(key)
+                    value[-1] = time.time()
+
+                    # put value in dictionary that key is now released
+                    value[2] = False
 
 class CastkeyListener(QThread):
     timeout_signal = pyqtSignal()
@@ -572,6 +604,10 @@ class HotkeyListener(QThread):
         for button in buttons:
             keyboard.press_and_release(button)
             time.sleep(interval)
+
+        # example of hitting a keyboard combination, not using this, but keeping code here
+        # in case i add this functionality
+        # key_controller.tap(keyboard.Key.ctrl, [keyboard.Key.alt, 'h'])
 
     def stop_listener(self):
         for key, value in self.hotkeys.items():
