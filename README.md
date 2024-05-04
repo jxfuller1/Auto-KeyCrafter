@@ -12,7 +12,11 @@ Enter Hotkey, keys you would like it to hit and interval between key presses:
 For auto-casting keys:
 Select which key(s) you want, select interval between key presses, enter start/stop hotkey.  With optional choice to hold key and release at given interval instead of just pressing the key at the interval:
 
-![Capture](https://github.com/jxfuller1/Auto-KeyCrafter/assets/123666150/6c97cf3c-73d4-4903-8573-2b56e5a74c83)
+Update:  Added feature to autocasting keys to allow user to choose how long the key press should be held down before releasing.  This is because games such as Last Epoch require the key to be held down for X amount of time in order to register the key press, especially if you are casting another ability at the same time.
+
+(should probably add this feature to the autohit keys tab as well instead of just the autocasting).
+
+![Capture](https://github.com/jxfuller1/Auto-KeyCrafter/assets/123666150/aa027f79-d3d1-4b9e-9ded-9bad32db7062)
 
 Feel free to hit me up for any questions or any features you would like this to have.
 
